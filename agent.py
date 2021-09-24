@@ -14,6 +14,6 @@ class Agent:
 
     #déplacement
 
-    #calcul performance
+    #consultation performance
 
     #apprentissage épisodique
