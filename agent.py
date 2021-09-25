@@ -3,17 +3,42 @@ class Agent:
         pass
 
     #attributs
+    etatBDI = []
 
     #exploration non-informée
+    def NonInforme(self):
+        while(self.amIAlive()):
+            self.OserveEnvironnmentWithAllMySensors()
+            self.UpdateMyState()
+            self.ChooseAnAction()
+            self.JustDoIt()
+        return self.etatBDI
 
     #exploration informée
+    def Informe(self):
+        pass
 
-    #aspiration poussière
+    #critère d'arret
+    def amIAlive(self):
+        pass
 
-    #ramassage bijoux
+    #appel des capteurs
+    def OserveEnvironnmentWithAllMySensors(self):
+        pass
+
+    #MAJ graph
+    def UpdateMyState(self):
+        pass
+
+    #consultation du graph
+    def ChooseAnAction(self):
+        pass
 
     #déplacement
-
-    #consultation performance
-
+    #aspiration poussière
+    #ramassage bijoux
+    #MAJ BDI
+    #performances
     #apprentissage épisodique
+    def JustDoIt(self):
+        pass
