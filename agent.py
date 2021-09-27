@@ -8,6 +8,7 @@ class Agent(threading.Thread):
     def __init__(self, environnement):
         super().__init__()
         # attributs de l'agent
+        self.life = True
         self.etatBDI = {"etatPiece": [], "performance": 0} # a compléter (etats precedents)
         self.capteurs = Capteur(environnement)
         self.effecteurs = Effecteur(environnement)
@@ -19,7 +20,6 @@ class Agent(threading.Thread):
             self.updateMyState()
             self.chooseAnAction()
             self.justDoIt()
-            print("agent")
 
     # exploration informée
     def informe(self):
@@ -31,7 +31,7 @@ class Agent(threading.Thread):
 
     # critère d'arret
     def amIAlive(self):
-        return True
+        return self.life
 
     # appel des capteurs
     def observeEnvironnmentWithAllMySensors(self):
