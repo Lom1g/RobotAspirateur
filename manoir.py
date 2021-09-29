@@ -11,6 +11,7 @@ class Manoir:
         self.dustImage = pygame.image.load("assets\\dust.png")
         self.diamondImage = pygame.image.load("assets\\jewel.png")
         self.backgroundImage = pygame.image.load("assets\\grille.jpg")
+        self.robotImage = pygame.image.load("assets\\robot.jpg")
         self.screen = pygame.display.set_mode((600, 600))
         self.environnement = Environnement()
         self.agent = Agent(self.environnement)
@@ -23,6 +24,7 @@ class Manoir:
     # affiche les différents assets du manoir
     def show(self):
         self.screen.blit(self.backgroundImage, (0, 0))
+        self.screen.blit(self.robotImage, (20 + (self.environnement.posRobotX * 120), 70 + (self.environnement.posRobotY * 120)))
         for i in range(len(self.environnement.grid)):
             if self.environnement.grid[i]["dust"]:
                 j = i % 5  # modulo
