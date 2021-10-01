@@ -27,13 +27,13 @@ class Manoir:
         self.screen.blit(self.robotImage, (20 + (self.environnement.posRobotX * 120), 70 + (self.environnement.posRobotY * 120)))
         for i in range(len(self.environnement.grid)):
             if self.environnement.grid[i]["dust"]:
-                j = i % 5  # modulo
-                k = i // 5  # floor division
-                self.screen.blit(self.dustImage, (20 + (j * 120), 20 + (k * 120)))
+                x = i % 5  # modulo
+                y = i // 5  # floor division
+                self.screen.blit(self.dustImage, (20 + (x * 120), 20 + (y * 120)))
             if self.environnement.grid[i]["diamond"]:
-                j = i % 5  # modulo
-                k = i // 5  # floor division
-                self.screen.blit(self.diamondImage, (70 + (j * 120), 20 + (k * 120)))
+                x = i % 5  # modulo
+                y = i // 5  # floor division
+                self.screen.blit(self.diamondImage, (70 + (x * 120), 20 + (y * 120)))
         pygame.display.flip()
 
 

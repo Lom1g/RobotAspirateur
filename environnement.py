@@ -74,6 +74,12 @@ class Environnement(threading.Thread):
     def getGrid(self):
         return self.grid
 
+    def getPerformance(self):
+        return self.performance
+
+    def getPosRobot(self):
+        return self.posRobotX, self.posRobotY
+
     def vacuum(self):  # ajouter la performance
         self.grid[self.posRobotX + self.posRobotY * 5]["dust"] = False
         self.grid[self.posRobotX + self.posRobotY * 5]["diamond"] = False
