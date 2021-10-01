@@ -1,4 +1,3 @@
-import operator
 import statistics
 import threading
 import time
@@ -147,7 +146,7 @@ class Agent(threading.Thread):
         else:
             return "nothing", None
 
-    # exploration non informée
+    # exploration non informee
     def noInforme(self):
         self.planNoInforme, self.costNoInforme = self.dls()
 

@@ -89,7 +89,7 @@ class Environnement(threading.Thread):
     def vacuum(self):
         self.cost += 1
         self.grid[self.posRobotX + self.posRobotY * 5]["dust"] = False
-        # si on aspire un dimant on reçoit une penitence
+        # si on aspire un diamant on reçoit une penitence
         if self.grid[self.posRobotX + self.posRobotY * 5]["diamond"]:
             self.grid[self.posRobotX + self.posRobotY * 5]["diamond"] = False
             self.penitence += 1
