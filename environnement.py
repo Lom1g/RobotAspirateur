@@ -14,7 +14,7 @@ class Environnement(threading.Thread):
         self.posRobotY = None
 
         # performance du robot
-        self.performance = 0
+        self.penitence = 0
 
         # grille du manoir
         self.grid = [{"dust": False, "diamond": False}, {"dust": False, "diamond": False},
@@ -51,14 +51,14 @@ class Environnement(threading.Thread):
         self.grid[prob]["diamond"] = True
 
     def shouldThereBeANewDustyPlace(self):
-        prob = random.randint(0, 10 ** 6)
+        prob = random.randint(0, 4*10 ** 5)
         if prob == 1:
             return True
         else:
             return False
 
     def shouldThereBeANewLostDiamond(self):
-        prob = random.randint(0, 10 ** 7)
+        prob = random.randint(0, 4*10 ** 5)
         if prob == 1:
             return True
         else:
@@ -67,24 +67,23 @@ class Environnement(threading.Thread):
     def gameIsRunning(self):
         return self.life
 
-    # mesure performance
-    def evaluatePerformance(self):
-        pass
-
     def getGrid(self):
         return self.grid
 
-    def getPerformance(self):
-        return self.performance
+    def getPenitence(self):
+        return self.penitence
 
     def getPosRobot(self):
         return self.posRobotX, self.posRobotY
 
-    def vacuum(self):  # ajouter la performance
+    def vacuum(self):
         self.grid[self.posRobotX + self.posRobotY * 5]["dust"] = False
-        self.grid[self.posRobotX + self.posRobotY * 5]["diamond"] = False
+        # si on aspire un dimant on reçoit une penitence
+        if self.grid[self.posRobotX + self.posRobotY * 5]["diamond"]:
+            self.grid[self.posRobotX + self.posRobotY * 5]["diamond"] = False
+            self.penitence += 1
 
-    def pick(self):  # ajouter la performance
+    def pick(self):
         self.grid[self.posRobotX + self.posRobotY * 5]["diamond"] = False
 
     def move_forward(self):

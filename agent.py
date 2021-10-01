@@ -19,7 +19,7 @@ class Agent(threading.Thread):
         self.life = True
 
         # etat Belief Desire Intention
-        self.etatBDI = {"etatPiece": [], "nombreItem": 0, "performance": 0}
+        self.etatBDI = {"etatPiece": [], "nombreItem": 0, "penitence": 0}
 
         # plan d'action
         self.plan = []
@@ -38,7 +38,64 @@ class Agent(threading.Thread):
 
     # exploration informée
     def informe(self):
-        pass
+        self.plan = self.greedy()
+
+    def greedy(self):
+        if self.etatBDI["nombreItem"] != 0:
+            # limite de profondeur
+            piece_max = 2
+            # liste des objets
+            liste_obj = []
+            # liste des objets traites
+            liste_traite = []
+            # liste des actions a retourner
+            liste_action = []
+            # coordonees robot
+            x = self.posRobotX
+            y = self.posRobotY
+
+            # noeud principal
+            n_princ = Node(x, y, None, None, [], None, None, 0)
+            # implemente la liste des pieces avec des objets
+            for i in range(len(self.etatBDI["etatPiece"])):
+                if self.etatBDI["etatPiece"][i]["dust"] and self.etatBDI["etatPiece"][i]["diamond"]:
+                    n = Node(i % 5, i // 5, None, None, ["aspirer", "ramasser"], None, None, 0)
+                    n.changeHeuristic(x, y, n_princ)
+                    liste_obj.append(n)
+                elif self.etatBDI["etatPiece"][i]["dust"]:
+                    n = Node(i % 5, i // 5, None, None, ["aspirer"], None, None, 0)
+                    n.changeHeuristic(x, y, n_princ)
+                    liste_obj.append(n)
+                elif self.etatBDI["etatPiece"][i]["diamond"]:
+                    n = Node(i % 5, i // 5, None, None, ["ramasser"], None, None, 0)
+                    n.changeHeuristic(x, y, n_princ)
+                    liste_obj.append(n)
+            # implement la liste des objets traite
+            liste_traite.insert(0, n_princ)
+
+            for item in range(1, piece_max):
+                liste_obj.sort(key=lambda c: c.heuristic)
+                liste_traite.insert(0, liste_obj[0])
+                liste_obj.pop(0)
+                # si la liste des objets a traite est vide on retourne le plan d'action
+                if not liste_obj:
+                    n = liste_traite[0]
+                    while n.previous is not None:
+                        liste_action += n.action
+                        n = n.previous
+                    return liste_action
+                xtmp, ytmp = liste_traite[0].coord
+                # on "actualise" les heuristic
+                for node in liste_obj:
+                    node.changeHeuristic(xtmp, ytmp, liste_obj[0])
+            # retourne le plan d'action qui correspond le mieux a l'objectif avec pour limite "item_max"
+            n = liste_traite[0]
+            while n.previous is not None:
+                liste_action += n.action
+                n = n.previous
+            return liste_action
+        else:
+            return "pas d'item dans le manoir"
 
     # exploration non informée
     def noInforme(self):
@@ -177,8 +234,8 @@ class Agent(threading.Thread):
                             if self.etatBDI["etatPiece"][x + (y + 1) * 5]["dust"]:
                                 # verification d'atteinte de l'objectif
                                 if self.etatBDI["nombreItem"] == liste_a_traite[0].item_clean + 2:
-                                    n = Node(x, y + 1, liste_a_traite[0].depth + 1, liste_a_traite[0].cost + 3
-                                    ["aspirer", "ramasser", "bas"],
+                                    n = Node(x, y + 1, liste_a_traite[0].depth + 1, liste_a_traite[0].cost + 3,
+                                             ["aspirer", "ramasser", "bas"],
                                              liste_a_traite[0].item_clean + 2, liste_a_traite[0])
                                     liste_noeud.append(n)
                                 else:
@@ -297,7 +354,7 @@ class Agent(threading.Thread):
     # MAJ de l'etat de l'environnement
     def updateMyState(self):
         self.etatBDI["etatPiece"], self.etatBDI[
-            "performance"], self.posRobotX, self.posRobotY = self.capteurs.getObservations()
+            "penitence"], self.posRobotX, self.posRobotY = self.capteurs.getObservations()
         self.etatBDI["nombreItem"] = 0
         for i in range(len(self.etatBDI["etatPiece"])):
             if self.etatBDI["etatPiece"][i]["dust"]:
@@ -307,7 +364,8 @@ class Agent(threading.Thread):
 
     # algo d'exploration
     def chooseAnAction(self):
-        self.noInforme()
+        self.informe()
+        #self.noInforme()
 
     # déplacement
     # aspiration poussière
@@ -317,7 +375,6 @@ class Agent(threading.Thread):
     # apprentissage épisodique
     def justDoIt(self):
         self.plan = list(reversed(self.plan))
-        print(self.plan)
         for action in self.plan:
             if action == "droite":
                 self.effecteurs.move_right()
