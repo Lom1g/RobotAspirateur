@@ -26,3 +26,9 @@ class Effecteur:
     def vacuum(self):
         self.environnement.vacuum()
 
+    def setCost(self, cost):
+        self.environnement.setCost(cost)
+
+    def setPenitence(self, penitence):
+        self.environnement.setCost(penitence)
+

@@ -14,3 +14,9 @@ class Capteur:
 
     def getObservations(self):
         return self.etatPiece, self.penitence, self.posRobotX, self.posRobotY
+
+    def getCost(self):
+        return self.environnement.getCost()
+
+    def getPenitence(self):
+        return self.environnement.getPenitence()

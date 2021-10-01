@@ -14,6 +14,7 @@ class Environnement(threading.Thread):
         self.posRobotY = None
 
         # performance du robot
+        self.cost = 0
         self.penitence = 0
 
         # grille du manoir
@@ -51,14 +52,14 @@ class Environnement(threading.Thread):
         self.grid[prob]["diamond"] = True
 
     def shouldThereBeANewDustyPlace(self):
-        prob = random.randint(0, 4*10 ** 5)
+        prob = random.randint(0, 10 ** 6)
         if prob == 1:
             return True
         else:
             return False
 
     def shouldThereBeANewLostDiamond(self):
-        prob = random.randint(0, 4*10 ** 5)
+        prob = random.randint(0, 10 ** 6)
         if prob == 1:
             return True
         else:
@@ -73,10 +74,20 @@ class Environnement(threading.Thread):
     def getPenitence(self):
         return self.penitence
 
+    def getCost(self):
+        return self.cost
+
+    def setPenitence(self, penitence):
+        self.penitence = penitence
+
+    def setCost(self, cost):
+        self.cost = cost
+
     def getPosRobot(self):
         return self.posRobotX, self.posRobotY
 
     def vacuum(self):
+        self.cost += 1
         self.grid[self.posRobotX + self.posRobotY * 5]["dust"] = False
         # si on aspire un dimant on reçoit une penitence
         if self.grid[self.posRobotX + self.posRobotY * 5]["diamond"]:
@@ -84,27 +95,32 @@ class Environnement(threading.Thread):
             self.penitence += 1
 
     def pick(self):
+        self.cost += 1
         self.grid[self.posRobotX + self.posRobotY * 5]["diamond"] = False
 
     def move_forward(self):
+        self.cost += 1
         if (self.posRobotY + 1) >= 5:
             pass
         else:
             self.posRobotY += 1
 
     def move_backward(self):
+        self.cost += 1
         if (self.posRobotY - 1) < 0:
             pass
         else:
             self.posRobotY -= 1
 
     def move_right(self):
+        self.cost += 1
         if (self.posRobotX + 1) >= 5:
             pass
         else:
             self.posRobotX += 1
 
     def move_left(self):
+        self.cost += 1
         if (self.posRobotX - 1) < 0:
             pass
         else:

@@ -16,25 +16,30 @@ class Node:
             while xtmp > 0:
                 list_action += ["gauche"]
                 self.heuristic += 1
+                self.cost += 1
                 xtmp -= 1
         elif xtmp < 0:
             while xtmp < 0:
                 list_action += ["droite"]
                 self.heuristic += 1
+                self.cost += 1
                 xtmp += 1
         if ytmp > 0:
             while ytmp > 0:
                 list_action += ["haut"]
                 self.heuristic += 1
+                self.cost += 1
                 ytmp -= 1
         elif ytmp < 0:
             while ytmp < 0:
                 list_action += ["bas"]
                 self.heuristic += 1
+                self.cost += 1
                 ytmp += 1
         self.action += list_action
-        self.heuristic += previous.heuristic
         self.previous = previous
+        self.cost += previous.cost
+        self.heuristic += previous.heuristic
 
 
 

@@ -1,4 +1,5 @@
 import operator
+import statistics
 import threading
 import time
 
@@ -15,14 +16,26 @@ class Agent(threading.Thread):
         environnement.posRobotX = self.posRobotX = 2
         environnement.posRobotY = self.posRobotY = 2
 
+        # iteration dans le cadre de l'exploration informe
+        self.iteration_min = 1
+        self.iteration = 2
+        self.iteration_max = 3
+
+        # liste des couts reels des iterations du parcours informe
+        self.liste_realCost = []
+
         # vie du robot
         self.life = True
 
         # etat Belief Desire Intention
         self.etatBDI = {"etatPiece": [], "nombreItem": 0, "penitence": 0}
 
-        # plan d'action
+        # plans d'action
         self.plan = []
+        self.planInforme = []
+        self.costInforme = 0
+        self.planNoInforme = []
+        self.costNoInforme = 0
 
         # interface du robot
         self.capteurs = Capteur(environnement)
@@ -34,11 +47,44 @@ class Agent(threading.Thread):
             self.observeEnvironnmentWithAllMySensors()
             self.updateMyState()
             self.chooseAnAction()
-            self.justDoIt()
+            # on choisit le plan d'action suivant son cout
+            if self.costNoInforme is not None and self.costInforme is not None:
+                if self.costNoInforme > self.costInforme:
+                    self.plan = self.planInforme
+                    self.justDoIt()
+                else:
+                    while 1:
+                        self.plan = self.planNoInforme
+                        # applique le parcours et analyse les performances
+                        for i in range(0, self.iteration):
+                            self.justDoIt()
+                            self.realCost()
+                        moy = statistics.mean(self.liste_realCost)
+                        # si l'on detecte des penitence on adapte la frequence et on explore
+                        if self.costInforme > moy:
+                            if self.iteration - 1 <= self.iteration_min:
+                                self.iteration = self.iteration_min
+                            else:
+                                self.iteration -= 1
+                            break
+                        # sinon on reitere le parcours et on adapte la frequence
+                        else:
+                            if self.iteration + 1 >= self.iteration_max:
+                                self.iteration = self.iteration_max
+                            else:
+                                self.iteration += 1
+
+
+
+    def realCost(self):
+        realcost = self.capteurs.getCost() - self.capteurs.getPenitence()
+        self.liste_realCost.append(realcost)
+        self.effecteurs.setCost(0)
+        self.effecteurs.setPenitence(0)
 
     # exploration informée
     def informe(self):
-        self.plan = self.greedy()
+        self.planInforme, self.costInforme = self.greedy()
 
     def greedy(self):
         if self.etatBDI["nombreItem"] != 0:
@@ -55,19 +101,19 @@ class Agent(threading.Thread):
             y = self.posRobotY
 
             # noeud principal
-            n_princ = Node(x, y, None, None, [], None, None, 0)
+            n_princ = Node(x, y, None, 0, [], None, None, 0)
             # implemente la liste des pieces avec des objets
             for i in range(len(self.etatBDI["etatPiece"])):
                 if self.etatBDI["etatPiece"][i]["dust"] and self.etatBDI["etatPiece"][i]["diamond"]:
-                    n = Node(i % 5, i // 5, None, None, ["aspirer", "ramasser"], None, None, 0)
+                    n = Node(i % 5, i // 5, None, 2, ["aspirer", "ramasser"], None, None, 0)
                     n.changeHeuristic(x, y, n_princ)
                     liste_obj.append(n)
                 elif self.etatBDI["etatPiece"][i]["dust"]:
-                    n = Node(i % 5, i // 5, None, None, ["aspirer"], None, None, 0)
+                    n = Node(i % 5, i // 5, None, 1, ["aspirer"], None, None, 0)
                     n.changeHeuristic(x, y, n_princ)
                     liste_obj.append(n)
                 elif self.etatBDI["etatPiece"][i]["diamond"]:
-                    n = Node(i % 5, i // 5, None, None, ["ramasser"], None, None, 0)
+                    n = Node(i % 5, i // 5, None, 1, ["ramasser"], None, None, 0)
                     n.changeHeuristic(x, y, n_princ)
                     liste_obj.append(n)
             # implement la liste des objets traite
@@ -80,26 +126,30 @@ class Agent(threading.Thread):
                 # si la liste des objets a traite est vide on retourne le plan d'action
                 if not liste_obj:
                     n = liste_traite[0]
+                    cout = 0
                     while n.previous is not None:
                         liste_action += n.action
+                        cout += n.cost
                         n = n.previous
-                    return liste_action
+                    return liste_action, cout
                 xtmp, ytmp = liste_traite[0].coord
                 # on "actualise" les heuristic
                 for node in liste_obj:
-                    node.changeHeuristic(xtmp, ytmp, liste_obj[0])
+                    node.changeHeuristic(xtmp, ytmp, liste_traite[0])
             # retourne le plan d'action qui correspond le mieux a l'objectif avec pour limite "item_max"
             n = liste_traite[0]
+            cout = 0
             while n.previous is not None:
                 liste_action += n.action
+                cout += n.cost
                 n = n.previous
-            return liste_action
+            return liste_action, cout
         else:
-            return "pas d'item dans le manoir"
+            return "nothing", None
 
     # exploration non informée
     def noInforme(self):
-        self.plan = self.dls()
+        self.planNoInforme, self.costNoInforme = self.dls()
 
     def dls(self):
         if self.etatBDI["nombreItem"] != 0:
@@ -120,21 +170,21 @@ class Agent(threading.Thread):
                     if self.etatBDI["nombreItem"] == 2:
                         n = Node(self.posRobotX, self.posRobotY, 0, 2, ["aspirer", "ramasser"], 2)
                         liste_action += n.action
-                        return liste_action
+                        return liste_action, n.cost
                     else:
                         liste_a_traite.insert(0, Node(self.posRobotX, self.posRobotY, 0, 2, ["aspirer", "ramasser"], 1))
                 else:
                     if self.etatBDI["nombreItem"] == 1:
                         n = Node(self.posRobotX, self.posRobotY, 0, 1, ["ramasser"], 1)
                         liste_action += n.action
-                        return liste_action
+                        return liste_action, n.cost
                     else:
                         liste_a_traite.insert(0, Node(self.posRobotX, self.posRobotY, 0, 1, ["ramasser"], 1))
             elif self.etatBDI["etatPiece"][self.posRobotX + self.posRobotY * 5]["dust"]:
                 if self.etatBDI["nombreItem"] == 1:
                     n = Node(self.posRobotX, self.posRobotY, 0, 1, ["aspirer"], 1)
                     liste_action += n.action
-                    return liste_action
+                    return liste_action, n.cost
                 else:
                     liste_a_traite.insert(0, Node(self.posRobotX, self.posRobotY, 0, 1, ["aspirer"], 1))
             else:
@@ -336,12 +386,14 @@ class Agent(threading.Thread):
                 liste_traite.sort(key=lambda c: c.cost)
                 # le noeud qui nous interesse est le premier
                 n = liste_traite[0]
+            cout = 0
             while n.previous is not None:
+                cout += n.cost
                 liste_action += n.action
                 n = n.previous
-            return liste_action
+            return liste_action, cout
         else:
-            return "pas d'item dans le manoir"
+            return "nothing", None
 
     # critère d'arret
     def amIAlive(self):
@@ -364,33 +416,30 @@ class Agent(threading.Thread):
 
     # algo d'exploration
     def chooseAnAction(self):
+        self.noInforme()
         self.informe()
-        #self.noInforme()
 
-    # déplacement
-    # aspiration poussière
-    # ramassage bijoux
-    # MAJ BDI
-    # performances
-    # apprentissage épisodique
     def justDoIt(self):
+        # delai entre les actions du robot
+        delai = 0.5
+
         self.plan = list(reversed(self.plan))
         for action in self.plan:
             if action == "droite":
                 self.effecteurs.move_right()
-                time.sleep(0.4)
+                time.sleep(delai)
             elif action == "gauche":
                 self.effecteurs.move_left()
-                time.sleep(0.4)
+                time.sleep(delai)
             elif action == "bas":
                 self.effecteurs.move_forward()
-                time.sleep(0.4)
+                time.sleep(delai)
             elif action == "haut":
                 self.effecteurs.move_backward()
-                time.sleep(0.4)
+                time.sleep(delai)
             elif action == "aspirer":
                 self.effecteurs.vacuum()
-                time.sleep(0.4)
+                time.sleep(delai)
             elif action == "ramasser":
                 self.effecteurs.pick()
-                time.sleep(0.4)
+                time.sleep(delai)
